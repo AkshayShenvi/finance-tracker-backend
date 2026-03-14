@@ -20,6 +20,7 @@ class ChaseCreditParser(CSVParser):
     - Category: Chase category name
     - Type: Transaction type (Sale, Return, Payment, etc.)
     - Amount: Negative = expense, Positive = payment/credit
+    - Memo: Additional notes
     """
 
     def get_name(self) -> str:
@@ -34,24 +35,42 @@ class ChaseCreditParser(CSVParser):
     def detect(self, csv_content: str) -> float:
         """
         Detect Chase credit format by checking for specific headers.
+        Uses chase-credit-specific headers to differentiate from Chase Bank
+        (which uses Details, Balance).
         """
         required_headers = set(self.get_required_headers())
         confidence = calculate_header_confidence(csv_content, required_headers)
 
-        # Boost confidence if Chase-specific optional headers are present
+        # Boost confidence if Chase credit-specific optional headers are present
         try:
             csv_reader = csv.DictReader(StringIO(csv_content))
             headers = set(csv_reader.fieldnames or [])
 
-            # Chase-specific headers
-            chase_specific = {"Post Date", "Type", "Memo"}
-            if chase_specific & headers:
-                confidence = min(1.0, confidence + 0.2)
+            # Chase credit-specific headers (Chase Bank uses "Details", "Balance" instead)
+            chase_credit_specific = {"Post Date", "Category", "Type", "Memo"}
+            matches = chase_credit_specific & headers
+            if matches:
+                confidence = min(1.0, confidence + 0.1 * len(matches))
 
         except Exception:
             pass
 
         return confidence
+
+    # Keywords for detecting different transaction types
+    TRANSFER_KEYWORDS = [
+        "payment", "online payment", "automatic payment", "autopay",
+        "thank you", "payment received", "credit card payment"
+    ]
+
+    REFUND_KEYWORDS = [
+        "refund", "return", "reversal", "chargeback", "credit adjustment"
+    ]
+
+    CASHBACK_KEYWORDS = [
+        "cashback", "cash back", "rewards", "reward credit", "points credit",
+        "statement credit", "promotional credit"
+    ]
 
     def parse(self, csv_content: str, account_type: Optional[str] = None) -> List[ParsedTransaction]:
         """
@@ -86,7 +105,7 @@ class ChaseCreditParser(CSVParser):
             description = row.get("Description", "").strip()
             amount_str = row.get("Amount", "").strip()
             category_name = row.get("Category", "").strip()
-            transaction_type_str = row.get("Type", "").strip()
+            chase_type = row.get("Type", "").strip()
             memo = row.get("Memo", "").strip()
 
             # Validate required fields
@@ -99,15 +118,31 @@ class ChaseCreditParser(CSVParser):
 
                 # Parse amount
                 amount_value = parse_amount(amount_str)
+                amount_abs = abs(amount_value)
+                desc_lower = description.lower()
+                chase_type_lower = chase_type.lower()
 
-                # Determine transaction type based on amount sign
-                # Note: Chase uses negative for expenses, positive for payments/credits
+                # Determine transaction type using Chase's Type field + amount sign
                 if amount_value < 0:
-                    transaction_type = "expense"
-                    amount_abs = abs(amount_value)
+                    # Negative = charge/purchase (expense by default)
+                    if any(kw in desc_lower for kw in self.TRANSFER_KEYWORDS):
+                        transaction_type = "transfer"
+                    else:
+                        transaction_type = "expense"
                 else:
-                    transaction_type = "income"
-                    amount_abs = amount_value
+                    # Positive = credit/payment
+                    if chase_type_lower == "payment":
+                        transaction_type = "transfer"  # CC payment from bank account
+                    elif chase_type_lower == "return":
+                        transaction_type = "refund"  # Merchandise return
+                    elif any(kw in desc_lower for kw in self.CASHBACK_KEYWORDS):
+                        transaction_type = "income"  # Rewards/cashback
+                    elif any(kw in desc_lower for kw in self.TRANSFER_KEYWORDS):
+                        transaction_type = "transfer"
+                    elif any(kw in desc_lower for kw in self.REFUND_KEYWORDS):
+                        transaction_type = "refund"
+                    else:
+                        transaction_type = "income"  # Default for positive amounts
 
                 # Create notes from memo
                 notes = memo if memo else None

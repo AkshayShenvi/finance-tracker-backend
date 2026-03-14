@@ -47,7 +47,8 @@ async def detect_parser(
         ParserDetectionResponse: Detection results with confidence scores
     """
     # Validate file type - accept CSV and PDF
-    if not file.filename or not (file.filename.endswith(".csv") or file.filename.endswith(".pdf")):
+    filename_lower = (file.filename or "").lower()
+    if not filename_lower.endswith(".csv") and not filename_lower.endswith(".pdf"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File must be a CSV (.csv) or PDF (.pdf) file"
@@ -59,7 +60,7 @@ async def detect_parser(
 
         # For CSV files, decode as UTF-8 string
         # For PDF files, keep as bytes
-        if file.filename.endswith(".csv"):
+        if filename_lower.endswith(".csv"):
             try:
                 file_content = content.decode("utf-8")
             except UnicodeDecodeError:

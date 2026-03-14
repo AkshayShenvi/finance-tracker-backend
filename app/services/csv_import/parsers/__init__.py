@@ -6,6 +6,7 @@ from .discover_bank_parser import DiscoverBankParser
 from .discover_savings_parser import DiscoverSavingsParser
 from .chase_bank_parser import ChaseBankParser
 from .chase_bank_pdf_parser import ChaseBankPDFParser
+from .chase_credit_parser import ChaseCreditParser
 
 __all__ = [
     "AmexParser",
@@ -13,4 +14,5 @@ __all__ = [
     "DiscoverSavingsParser",
     "ChaseBankParser",
     "ChaseBankPDFParser",
+    "ChaseCreditParser",
 ]
