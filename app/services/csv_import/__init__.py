@@ -11,6 +11,7 @@ from .parsers import (
     DiscoverSavingsParser,
     ChaseBankParser,
     ChaseBankPDFParser,
+    ChaseCreditParser,
 )
 
 # Legacy imports for backwards compatibility
@@ -32,6 +33,7 @@ def initialize_parsers():
         DiscoverSavingsParser(),
         ChaseBankParser(),
         ChaseBankPDFParser(),
+        ChaseCreditParser(),
     ]
 
     for parser in parsers:

@@ -217,7 +217,8 @@ async def import_csv(
         CSVImportResponse: Import summary with statistics and results
     """
     # Validate file type - accept CSV and PDF
-    if not file.filename or not (file.filename.endswith(".csv") or file.filename.endswith(".pdf")):
+    filename_lower = (file.filename or "").lower()
+    if not filename_lower.endswith(".csv") and not filename_lower.endswith(".pdf"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File must be a CSV (.csv) or PDF (.pdf) file"
@@ -328,7 +329,8 @@ async def preview_csv_import(
         ImportPreviewResponse: Preview data with parsed transactions
     """
     # Validate file type - accept CSV and PDF
-    if not file.filename or not (file.filename.endswith(".csv") or file.filename.endswith(".pdf")):
+    filename_lower = (file.filename or "").lower()
+    if not filename_lower.endswith(".csv") and not filename_lower.endswith(".pdf"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File must be a CSV (.csv) or PDF (.pdf) file"
@@ -351,7 +353,7 @@ async def preview_csv_import(
         content = await file.read()
 
         # Handle PDF vs CSV differently
-        if file.filename.endswith(".pdf"):
+        if filename_lower.endswith(".pdf"):
             # PDFs are binary - pass raw bytes
             file_content = content
         else:
