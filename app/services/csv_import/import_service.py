@@ -253,25 +253,10 @@ class CSVImportService:
                     transfer_candidate = self.transfer_detector.detect_transfer(parsed_tx, account_id)
                     if transfer_candidate and transfer_candidate.target_account_id:
                         transfer_to_account_id = transfer_candidate.target_account_id
+                elif transaction_type_str == "card_payment":
+                    tx_type = TransactionType.CARD_PAYMENT
                 elif transaction_type_str == "refund":
-                    # Refunds are expense offsets - create as expense with special category
-                    tx_type = TransactionType.EXPENSE
-                    # If user hasn't assigned a category, use/create a "Refunds" category
-                    if not category_id:
-                        refund_category = self.db.query(Category).filter(
-                            Category.user_id == self.user_id,
-                            Category.name == "Refunds"
-                        ).first()
-                        if not refund_category:
-                            refund_category = Category(
-                                user_id=self.user_id,
-                                name="Refunds",
-                                color="#10b981",  # Green color
-                                icon="↩️"
-                            )
-                            self.db.add(refund_category)
-                            self.db.flush()
-                        category_id = refund_category.id
+                    tx_type = TransactionType.REFUND
                 else:
                     tx_type = TransactionType.TRANSFER
 

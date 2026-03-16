@@ -210,10 +210,11 @@ async def merge_transactions(
     else:
         primary = transactions[0]
 
-    # Calculate net: income = +amount, expense/transfer = -amount
+    # Calculate net: income/card_payment = +amount, expense/transfer = -amount
+    POSITIVE_TYPES = ("income", "card_payment", "refund", TransactionType.INCOME, TransactionType.CARD_PAYMENT, TransactionType.REFUND)
     net = 0.0
     for txn in transactions:
-        if txn.transaction_type in ("income", TransactionType.INCOME):
+        if txn.transaction_type in POSITIVE_TYPES:
             net += float(txn.amount)
         else:
             net -= float(txn.amount)
@@ -274,10 +275,10 @@ async def update_transaction(
         )
 
     if body.transaction_type is not None:
-        if body.transaction_type not in ("income", "expense", "transfer"):
+        if body.transaction_type not in ("income", "expense", "transfer", "card_payment", "refund"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="transaction_type must be one of: income, expense, transfer"
+                detail="transaction_type must be one of: income, expense, transfer, card_payment, refund"
             )
         transaction.transaction_type = body.transaction_type
 

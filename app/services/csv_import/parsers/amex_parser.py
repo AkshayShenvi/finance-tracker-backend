@@ -131,21 +131,15 @@ class AmexParser(CSVParser):
                     transaction_type = "expense"
                     amount_abs = amount_value
                 else:
-                    # Negative amount - need to classify intelligently
+                    # Negative amount = credit to the card
                     amount_abs = abs(amount_value)
 
-                    # Check if it's a payment (transfer)
+                    # Card payment if it matches payment keywords
                     if any(kw in desc_lower for kw in self.TRANSFER_KEYWORDS):
-                        transaction_type = "transfer"
-                    # Check if it's a refund (should offset expenses)
-                    elif any(kw in desc_lower for kw in self.REFUND_KEYWORDS):
-                        transaction_type = "refund"  # Special marker
-                    # Check if it's cashback/rewards
-                    elif any(kw in desc_lower for kw in self.CASHBACK_KEYWORDS):
-                        transaction_type = "income"  # Keep as income
+                        transaction_type = "card_payment"
                     else:
-                        # Default: treat as income (safer than assuming transfer)
-                        transaction_type = "income"
+                        # Everything else (refunds, cashback, credits) is a refund
+                        transaction_type = "refund"
 
                 # Create notes from statement_as
                 notes = statement_as if statement_as else None

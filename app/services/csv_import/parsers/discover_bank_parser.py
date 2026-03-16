@@ -128,18 +128,15 @@ class DiscoverBankParser(CSVParser):
                         transaction_type = "expense"
                     amount_abs = amount_value
                 else:
-                    # Negative = credit/deposit
-                    # Could be income, transfer in, refund, or cashback
+                    # Negative = credit to the card
                     amount_abs = abs(amount_value)
 
+                    # Card payment if it matches payment keywords
                     if any(kw in desc_lower for kw in self.TRANSFER_KEYWORDS):
-                        transaction_type = "transfer"
-                    elif any(kw in desc_lower for kw in self.REFUND_KEYWORDS):
-                        transaction_type = "refund"
-                    elif any(kw in desc_lower for kw in self.CASHBACK_KEYWORDS):
-                        transaction_type = "income"
+                        transaction_type = "card_payment"
                     else:
-                        transaction_type = "income"
+                        # Everything else (refunds, cashback, credits) is a refund
+                        transaction_type = "refund"
 
                 # Create parsed transaction
                 transaction = ParsedTransaction(

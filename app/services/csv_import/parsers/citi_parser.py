@@ -107,7 +107,7 @@ class CitiParser(CSVParser):
                     transaction_type = "expense"
                 else:
                     amount = parse_amount(credit_str)
-                    transaction_type = "income"
+                    transaction_type = "card_payment"
 
                 # Create notes from status
                 notes = f"Status: {status}" if status else None

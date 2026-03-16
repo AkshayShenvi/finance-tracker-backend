@@ -116,8 +116,9 @@ class ChaseCreditParser(CSVParser):
                 # Parse date (MM/DD/YYYY)
                 transaction_date = parse_date(date_str, "%m/%d/%Y")
 
-                # Parse amount — preserve the sign from the CSV
+                # Parse amount — use sign for type classification, store abs as amount
                 amount_value = parse_amount(amount_str)
+                amount_abs = abs(amount_value)
                 desc_lower = description.lower()
                 chase_type_lower = chase_type.lower()
 
@@ -129,19 +130,17 @@ class ChaseCreditParser(CSVParser):
                     else:
                         transaction_type = "expense"
                 else:
-                    # Positive = credit/payment
-                    if chase_type_lower == "payment":
-                        transaction_type = "transfer"  # CC payment from bank account
+                    # Positive = credit/payment — money coming into the credit card
+                    if chase_type_lower == "payment" or any(kw in desc_lower for kw in self.TRANSFER_KEYWORDS):
+                        transaction_type = "card_payment"
                     elif chase_type_lower == "return":
-                        transaction_type = "refund"  # Merchandise return
-                    elif any(kw in desc_lower for kw in self.CASHBACK_KEYWORDS):
-                        transaction_type = "income"  # Rewards/cashback
-                    elif any(kw in desc_lower for kw in self.TRANSFER_KEYWORDS):
-                        transaction_type = "transfer"
+                        transaction_type = "refund"
                     elif any(kw in desc_lower for kw in self.REFUND_KEYWORDS):
                         transaction_type = "refund"
+                    elif any(kw in desc_lower for kw in self.CASHBACK_KEYWORDS):
+                        transaction_type = "income"
                     else:
-                        transaction_type = "income"  # Default for positive amounts
+                        transaction_type = "card_payment"
 
                 # Create notes from memo
                 notes = memo if memo else None
@@ -149,7 +148,7 @@ class ChaseCreditParser(CSVParser):
                 # Create parsed transaction
                 transaction = ParsedTransaction(
                     date=transaction_date,
-                    amount=amount_value,
+                    amount=amount_abs,
                     description=description,
                     transaction_type=transaction_type,
                     category=category_name if category_name else None,

@@ -111,7 +111,7 @@ class CapitalOneParser(CSVParser):
                     transaction_type = "expense"
                 else:
                     amount = parse_amount(credit_str)
-                    transaction_type = "income"
+                    transaction_type = "card_payment"
 
                 # Create parsed transaction
                 transaction = ParsedTransaction(

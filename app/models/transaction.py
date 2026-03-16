@@ -9,6 +9,8 @@ class TransactionType(str, enum.Enum):
     INCOME = "income"
     EXPENSE = "expense"
     TRANSFER = "transfer"
+    CARD_PAYMENT = "card_payment"
+    REFUND = "refund"
 
 
 class Transaction(Base):
