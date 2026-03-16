@@ -54,7 +54,7 @@ migration_applied() {
 mark_migration_applied() {
   local version=$1
   PGPASSWORD=$POSTGRES_PASSWORD psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c \
-    "INSERT INTO schema_migrations (version) VALUES ('$version');"
+    "INSERT INTO schema_migrations (version) VALUES ('$version') ON CONFLICT (version) DO NOTHING;"
 }
 
 # Run migrations in order
