@@ -12,6 +12,7 @@ from app.models.account import Account
 from app.models.transaction import Transaction
 from app.models.category import Category
 from app.services.sankey_service import SankeyService
+from app.services.category_expenses_service import CategoryExpensesService
 
 router = APIRouter()
 
@@ -135,3 +136,16 @@ async def get_dashboard_summary(
             "month_end": month_end.isoformat()
         }
     }
+
+
+@router.get("/category-expenses-monthly")
+async def get_category_expenses_monthly(
+    year: int = Query(..., description="Year to analyze"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    service = CategoryExpensesService(db)
+    return service.get_category_expenses_monthly(
+        user_id=current_user.id,
+        year=year,
+    )
