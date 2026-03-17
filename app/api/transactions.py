@@ -227,9 +227,11 @@ async def merge_transactions(
         primary.transaction_type = TransactionType.EXPENSE
         primary.amount = round(abs(net), 2)
 
-    # Delete the rest
+    # Delete the rest (skip the primary, not just transactions[0])
     deleted_ids = []
-    for txn in transactions[1:]:
+    for txn in transactions:
+        if txn.id == primary.id:
+            continue
         deleted_ids.append(txn.id)
         db.delete(txn)
 
